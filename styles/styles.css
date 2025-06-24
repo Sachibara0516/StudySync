@@ -250,6 +250,9 @@ h1.title {
 }
 
 #sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
     width: 220px;
     background-color: #f3f4f6;
     border-right: 1.5px solid #e5e7eb;
@@ -258,6 +261,7 @@ h1.title {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    overflow-y: auto; /* Enable scrolling if sidebar content overflows vertically */
 }
 
 #sidebar .logo {
@@ -327,6 +331,7 @@ h1.title {
     padding: 24px;
     overflow-y: auto;
     outline-offset: 4px;
+    height: 100vh; /* Make content area fill viewport height for independent scroll */
 }
 
 /* DASHBOARD PAGE */
