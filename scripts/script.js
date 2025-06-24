@@ -349,8 +349,16 @@ function showSubjectDetail(subjectName) {
     sectionTitle.textContent = subjectName + " Details";
 
     const tabsContainer = clone.querySelector('.tabs');
+    
+    // Create the tab buttons container with flex layout to list buttons horizontally
+    const tabButtons = document.createElement('div');
+    tabButtons.setAttribute('role', 'tablist');
+    tabButtons.style.display = 'flex';          // key for horizontal layout
+    tabButtons.style.gap = '16px';              // horizontal spacing between buttons
+    tabButtons.style.marginBottom = '24px';     // spacing bottom of buttons
 
-    // Sections like Modules, Pointers, Assignments
+
+    // Section data as before
     const sectionData = [
         {
             title: "Modules",
@@ -364,7 +372,7 @@ function showSubjectDetail(subjectName) {
             colorEnd: "#38bdf8"
         },
         {
-            title: "Pointers to Review",
+            title: "Reviewers",   // renamed from "Pointers to Review" as per your request
             className: "pointers",
             items: [
                 { title: "Key Formula", content: "List of formulas you should memorize." },
@@ -387,10 +395,45 @@ function showSubjectDetail(subjectName) {
         }
     ];
 
-    sectionData.forEach(section => {
-        const sectionDiv = document.createElement('div');
-        sectionDiv.classList.add(section.className);
 
+    // Create content container for tab panels
+    const tabPanelsContainer = document.createElement('div');
+
+    sectionData.forEach((section, index) => {
+        // Create tab button
+        const tabButton = document.createElement('button');
+        tabButton.setAttribute('role', 'tab');
+        tabButton.id = `tab-${section.className}`;
+        tabButton.setAttribute('aria-controls', `panel-${section.className}`);
+        tabButton.textContent = section.title;
+        tabButton.type = 'button';
+        tabButton.style.padding = '10px 20px';
+        tabButton.style.border = 'none';
+        tabButton.style.borderBottom = '3px solid transparent';
+        tabButton.style.background = 'transparent';
+        tabButton.style.fontWeight = '600';
+        tabButton.style.cursor = 'pointer';
+        tabButton.style.fontSize = '16px';
+        tabButton.style.color = index === 0 ? '#4338ca' : '#6b7280'; // active color and inactive
+
+        if (index === 0) {
+            tabButton.setAttribute('aria-selected', 'true');
+            tabButton.tabIndex = 0;
+        } else {
+            tabButton.setAttribute('aria-selected', 'false');
+            tabButton.tabIndex = -1;
+        }
+
+        tabButtons.appendChild(tabButton);
+
+        // Create corresponding tab panel
+        const panel = document.createElement('div');
+        panel.id = `panel-${section.className}`;
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', `tab-${section.className}`);
+        panel.style.display = index === 0 ? 'block' : 'none';
+
+        // Build the section content inside the panel
         section.items.forEach(item => {
             const sectionFrame = document.createElement('div');
             sectionFrame.classList.add('section-frame');
@@ -403,10 +446,11 @@ function showSubjectDetail(subjectName) {
             const itemLabel = document.createElement('p');
             itemLabel.innerHTML = `&#8226; <b>${item.title}:</b> ${item.content}`;
             itemLabel.style.margin = '0 0 8px 0';
-            itemLabel.style.userSelect = 'text'; // allow user to select text for AI
+            itemLabel.style.userSelect = 'text'; // allow user selection
+
             sectionFrame.appendChild(itemLabel);
 
-            // For Modules, add Ask AI button to explain or edit
+            // The "Ask AI" button only for Modules as before
             if (section.className === 'modules') {
                 const askAiBtn = document.createElement('button');
                 askAiBtn.textContent = 'Ask AI';
@@ -422,7 +466,6 @@ function showSubjectDetail(subjectName) {
                 askAiBtn.style.userSelect = 'none';
                 askAiBtn.style.display = 'none';
 
-                // Show button when text selected on paragraph
                 itemLabel.addEventListener('mouseup', () => {
                     setTimeout(() => {
                         if (window.getSelection && window.getSelection().toString().length > 0) {
@@ -430,7 +473,7 @@ function showSubjectDetail(subjectName) {
                         } else {
                             askAiBtn.style.display = 'none';
                         }
-                    }, 10); // Slight delay for selection event
+                    }, 10);
                 });
 
                 askAiBtn.addEventListener('click', async () => {
@@ -454,7 +497,7 @@ function showSubjectDetail(subjectName) {
                 sectionFrame.appendChild(askAiBtn);
             }
 
-            // Add private comment textarea (notes)
+            // Private notes textarea as before
             const notesTextarea = document.createElement('textarea');
             notesTextarea.placeholder = 'Private comment...';
             notesTextarea.style.width = '100%';
@@ -464,7 +507,6 @@ function showSubjectDetail(subjectName) {
             notesTextarea.style.fontSize = '13px';
             notesTextarea.style.resize = 'vertical';
             const noteKey = `${section.title}::${item.title}`;
-
             notesTextarea.value = SAVED_NOTES[noteKey] || '';
 
             notesTextarea.addEventListener('input', () => {
@@ -474,10 +516,11 @@ function showSubjectDetail(subjectName) {
 
             sectionFrame.appendChild(notesTextarea);
 
-            // For Assignments, provide Upload and View buttons with functionality
+            // Assignments file upload/view buttons as before
             if (section.className === 'assignments') {
                 const assignKey = `${subjectName}::${item.title}`;
 
+                // (reuse your existing Upload and View button implementation here, same as before)
                 const uploadBtn = document.createElement('button');
                 uploadBtn.textContent = 'Upload File';
                 uploadBtn.style.backgroundColor = 'white';
@@ -511,8 +554,6 @@ function showSubjectDetail(subjectName) {
                         if (!file) return;
                         const reader = new FileReader();
                         reader.onload = () => {
-                            // Note: In actual app, you would upload file to server here.
-                            // For demo, store file path placeholder string, as actual file access is limited in browsers.
                             SUBMITTED_ASSIGNMENTS[assignKey] = file.name;
                             setLocalData(STORAGE_KEY_ASSIGNMENTS, SUBMITTED_ASSIGNMENTS);
                             uploadBtn.textContent = 'Uploaded ✔️';
@@ -520,7 +561,7 @@ function showSubjectDetail(subjectName) {
                             viewBtn.disabled = false;
                             alert(`Uploaded file: ${file.name}`);
                         };
-                        reader.readAsDataURL(file); // Just to trigger load event
+                        reader.readAsDataURL(file);
                     };
                     fileInput.click();
                 });
@@ -545,13 +586,38 @@ function showSubjectDetail(subjectName) {
                 sectionFrame.appendChild(viewBtn);
             }
 
-            sectionDiv.appendChild(sectionFrame);
+            panel.appendChild(sectionFrame);
         });
 
-        tabsContainer.appendChild(sectionDiv);
+        tabPanelsContainer.appendChild(panel);
+
+        // Tab button click event to manage tab switching
+        tabButton.addEventListener('click', () => {
+            // Update all tab buttons
+            Array.from(tabButtons.children).forEach((btn, btnIdx) => {
+                if (btn === tabButton) {
+                    btn.setAttribute('aria-selected', 'true');
+                    btn.tabIndex = 0;
+                    btn.style.color = '#4338ca';
+                    // Show corresponding panel
+                    tabPanelsContainer.children[btnIdx].style.display = 'block';
+                } else {
+                    btn.setAttribute('aria-selected', 'false');
+                    btn.tabIndex = -1;
+                    btn.style.color = '#6b7280';
+                    // Hide other panels
+                    tabPanelsContainer.children[btnIdx].style.display = 'none';
+                }
+            });
+        });
     });
 
-    // Back button functionality
+    // Clear old tabs container content and append new tabs and panels
+    tabsContainer.innerHTML = '';
+    tabsContainer.appendChild(tabButtons);
+    tabsContainer.appendChild(tabPanelsContainer);
+
+    // Back button event as before
     clone.querySelector('#subject-back-btn').addEventListener('click', () => displayPage('Class'));
 
     contentArea.appendChild(clone);

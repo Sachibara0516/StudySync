@@ -489,6 +489,42 @@ h1.title {
     color: white;
 }
 
+.tabs [role="tablist"] {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #e5e7eb; /* subtle bottom border for tabs */
+}
+
+.tabs [role="tablist"] {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.tabs [role="tablist"] button {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #6b7280;
+    transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.tabs [role="tablist"] button[aria-selected="true"] {
+    border-bottom-color: #4338ca;
+    color: #4338ca;
+    outline: none;
+}
+
+.tabs [role="tablist"] button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
 .back-btn {
     align-self: flex-start;
     margin-top: 24px;
