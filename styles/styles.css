@@ -250,6 +250,10 @@ h1.title {
     overflow: -moz-hidden-unscrollable; 
 }
 
+#dashboard-calendar {
+    min-height: 320px; /* or height: 320px; adjust as needed */
+}
+
 #sidebar {
     position: fixed;
     top: 0;

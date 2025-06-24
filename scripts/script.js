@@ -251,7 +251,7 @@ function renderDashboard() {
 
     // Calendar Mini
     const calendarDiv = clone.querySelector('#dashboard-calendar');
-    initMiniCalendar(calendarDiv);
+    initFullCalendar(calendarDiv);
 
     // Graph
     const canvas = clone.querySelector('#dashboard-graph');
