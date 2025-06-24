@@ -563,6 +563,8 @@ function renderCalendarPage() {
     const template = document.getElementById('page-calendar-template');
     const clone = template.content.cloneNode(true);
 
+    let selectedTaskIndex = -1;
+
     const calendarWidget = clone.querySelector('#calendar-widget');
     initFullCalendar(calendarWidget);
 
@@ -570,28 +572,48 @@ function renderCalendarPage() {
     const incomingList = clone.getElementById ? clone.getElementById('incoming-activities') : clone.querySelector('#incoming-activities');
     const todoAddBtn = clone.getElementById ? clone.getElementById('todo-add-btn') : clone.querySelector('#todo-add-btn');
 
-    // Initialize To-do tasks list from SHARED_TASKS
-    function refreshTodoList() {
-        todoList.innerHTML = '';
-        SHARED_TASKS.forEach((task, idx) => {
-            const li = document.createElement('li');
-            li.textContent = `${task.completed ? '✓ ' : '✗ '}${task.title} – Due: ${formatDateISO(task.due_date)}`;
-            li.style.color = task.completed ? 'green' : 'black';
-            li.tabIndex = 0;
-            li.style.cursor = 'pointer';
-            li.addEventListener('click', () => {
-                // Toggle completion status
-                SHARED_TASKS[idx].completed = !SHARED_TASKS[idx].completed;
-                saveAllToLocalStorage();
-                refreshTodoList();
-            });
-            todoList.appendChild(li);
-        });
+    function updateDeleteButtonState() {
+        if (selectedTaskIndex === -1) {
+            todoDeleteBtn.disabled = true;
+        } else {
+            todoDeleteBtn.disabled = false;
+        }
     }
 
-    refreshTodoList();
+    // Initialize To-do tasks list from SHARED_TASKS
+    function refreshTodoList() {
+    todoList.innerHTML = '';
+    SHARED_TASKS.forEach((task, idx) => {
+        const li = document.createElement('li');
+        li.textContent = `${task.completed ? '✓ ' : '✗ '}${task.title} – Due: ${formatDateISO(task.due_date)}`;
+        li.style.color = task.completed ? 'green' : 'black';
+        li.tabIndex = 0;
+        li.style.cursor = 'pointer';
 
-    // Add new To-do task
+        // Highlight if selected
+        if (idx === selectedTaskIndex) {
+            li.classList.add('selected');
+            li.style.backgroundColor = '#bfdbfe';  // highlighted background
+            li.style.color = '#1e40af';
+        }
+
+        li.addEventListener('click', () => {
+            selectedTaskIndex = idx;
+            updateDeleteButtonState();
+            refreshTodoList();
+        });
+
+        li.addEventListener('dblclick', () => {
+            // On double-click toggle completion immediately
+            SHARED_TASKS[idx].completed = !SHARED_TASKS[idx].completed;
+            saveAllToLocalStorage();
+            refreshTodoList();
+        });
+
+        todoList.appendChild(li);
+    });
+}
+
     todoAddBtn.addEventListener('click', () => {
         const title = prompt('Enter new To-do task title:');
         if (!title) return;
@@ -602,6 +624,8 @@ function renderCalendarPage() {
         }
         SHARED_TASKS.push({ title, due_date: due_date || '', description: '', completed: false });
         saveAllToLocalStorage();
+        selectedTaskIndex = -1; // reset selection when new task added
+        updateDeleteButtonState();
         refreshTodoList();
     });
 
@@ -611,6 +635,22 @@ function renderCalendarPage() {
         const li = document.createElement('li');
         li.textContent = text;
         incomingList.appendChild(li);
+    });
+
+    const todoDeleteBtn = clone.querySelector('#todo-delete-btn');
+    todoDeleteBtn.disabled = true; // initially disabled
+
+    todoDeleteBtn.addEventListener('click', () => {
+        if (selectedTaskIndex === -1) return; // no selection
+
+        const task = SHARED_TASKS[selectedTaskIndex];
+        if (confirm(`Delete task: "${task.title}"? This action cannot be undone.`)) {
+            SHARED_TASKS.splice(selectedTaskIndex, 1);
+            selectedTaskIndex = -1; // reset selection
+            saveAllToLocalStorage();
+            updateDeleteButtonState();
+            refreshTodoList();
+        }
     });
 
     contentArea.appendChild(clone);

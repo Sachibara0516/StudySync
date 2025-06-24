@@ -129,7 +129,10 @@
                 <section id="todo-section" aria-label="To-do tasks and activities">
                     <h3>To-do</h3>
                     <ul id="todo-list" class="task-list" tabindex="0" aria-label="Today's to-do tasks"></ul>
-                    <button id="todo-add-btn" class="add-btn" aria-label="Add new to-do task">➕ New To-do</button>
+                        <div style="display: flex; gap: 8px; margin-top: 12px;">
+                            <button id="todo-add-btn" class="add-btn" aria-label="Add new to-do task">➕ New To-do</button>
+                            <button id="todo-delete-btn" class="danger-btn" aria-label="Delete selected to-do task" disabled>🗑 Delete Task</button>
+                        </div>
                     <h3>Incoming Activities</h3>
                     <ul id="incoming-activities" class="task-list" tabindex="0" aria-label="Incoming activities"></ul>
                 </section>
