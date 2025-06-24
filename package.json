@@ -1,0 +1,9 @@
+{
+  "name": "studysync",
+  "version": "1.0.0",
+  "description": "StudySync Web Version",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {}
+}
