@@ -1477,15 +1477,23 @@ function drawWeeklyScoreGraph(canvas) {
     subjects.forEach((sub,i) => {
         const x = padding + i*( (w - 2*padding)/(subjects.length - 1) );
         const y = h - padding - (scores[i]/maxScore)*(h - 2*padding);
+
+        // Draw point
         ctx.beginPath();
         ctx.arc(x, y, 4,0, 2*Math.PI);
         ctx.fill();
+
+        // Draw subject label below point
         ctx.fillText(sub, x, h - padding + 4);
+
+        // Draw score label above point
+        ctx.textBaseline = "bottom";
+        ctx.fillText(scores[i], x, y - 6);
+
+        // Reset baseline for next iteration
+        ctx.textBaseline = "top";
     });
 }
-
-// More render functions for Class page, Subject details, Calendar, Progress, Settings, Group pages, etc., follow similarly,
-// fully implementing all UI and functionality replicated and enhanced from EC.py to web platform.
 
 // Utility date format
 function formatDateISO(isoStr) {
