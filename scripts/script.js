@@ -563,6 +563,9 @@ function renderCalendarPage() {
     const template = document.getElementById('page-calendar-template');
     const clone = template.content.cloneNode(true);
 
+    const calendarWidget = clone.querySelector('#calendar-widget');
+    initFullCalendar(calendarWidget);
+
     const todoList = clone.getElementById ? clone.getElementById('todo-list') : clone.querySelector('#todo-list');
     const incomingList = clone.getElementById ? clone.getElementById('incoming-activities') : clone.querySelector('#incoming-activities');
     const todoAddBtn = clone.getElementById ? clone.getElementById('todo-add-btn') : clone.querySelector('#todo-add-btn');
@@ -1052,6 +1055,208 @@ function initMiniCalendar(container) {
     dateDiv.style.color = "#2563eb";
     dateDiv.style.fontWeight = "600";
     container.appendChild(dateDiv);
+}
+
+// Format date as YYYY-MM-DD
+function formatISODate(date) {
+    return date.toISOString().slice(0, 10);
+}
+
+// Get tasks/events on a given YYYY-MM-DD date string
+function getTasksForDate(dateStr) {
+    return SHARED_TASKS.filter(task => task.due_date === dateStr);
+}
+
+// Create calendar UI in container
+// options: { year, month, showNav (bool), onDateClick (func), showTasks (bool) }
+function createCalendar(container, options = {}) {
+    container.innerHTML = ''; // clear container
+
+    const today = new Date();
+    const year = options.year !== undefined ? options.year : today.getFullYear();
+    const month = options.month !== undefined ? options.month : today.getMonth();
+
+    // Header with Month-Year and optional navigation
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = options.showNav ? 'space-between' : 'center';
+    header.style.alignItems = 'center';
+    header.style.marginBottom = '10px';
+    header.style.userSelect = 'none';
+
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    let currentYear = year;
+    let currentMonth = month;
+
+    // Month-Year title element
+    const title = document.createElement('h4');
+    title.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+    title.style.margin = '0';
+    title.style.fontWeight = '600';
+    header.appendChild(title);
+
+    // Navigation buttons if showNav
+    if (options.showNav) {
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '◀';
+        prevBtn.style.cursor = 'pointer';
+        prevBtn.title = 'Previous month';
+        prevBtn.style.fontSize = '18px';
+        prevBtn.style.userSelect = 'none';
+        prevBtn.style.padding = '0 8px';
+
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = '▶';
+        nextBtn.style.cursor = 'pointer';
+        nextBtn.title = 'Next month';
+        nextBtn.style.fontSize = '18px';
+        nextBtn.style.userSelect = 'none';
+        nextBtn.style.padding = '0 8px';
+
+        header.insertBefore(prevBtn, title);
+        header.appendChild(nextBtn);
+
+        prevBtn.addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendarBody();
+        });
+        nextBtn.addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendarBody();
+        });
+    }
+
+    container.appendChild(header);
+
+    // Days of week header
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const daysRow = document.createElement('div');
+    daysRow.style.display = 'grid';
+    daysRow.style.gridTemplateColumns = 'repeat(7, 1fr)';
+    daysRow.style.textAlign = 'center';
+    daysRow.style.fontWeight = '600';
+    daysRow.style.color = '#555';
+    daysRow.style.userSelect = 'none';
+    daysRow.style.marginBottom = '6px';
+
+    daysOfWeek.forEach(dayName => {
+        const dayCell = document.createElement('div');
+        dayCell.textContent = dayName;
+        dayCell.style.fontSize = options.showNav ? '14px' : '12px';
+        daysRow.appendChild(dayCell);
+    });
+
+    container.appendChild(daysRow);
+
+    // Container for dates grid
+    const datesGrid = document.createElement('div');
+    datesGrid.style.display = 'grid';
+    datesGrid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+    datesGrid.style.gap = options.showNav ? '4px' : '2px'; // less gap for mini calendar
+
+    container.appendChild(datesGrid);
+
+    function renderCalendarBody() {
+        title.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+        datesGrid.innerHTML = '';
+
+        // First day of month
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        // Number of days in the month
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        // Day of week month starts on (0=Sun, 6=Sat)
+        const startDay = firstDay.getDay();
+
+        // Fill in blank days for first week before 1st
+        for (let i = 0; i < startDay; i++) {
+            const blankCell = document.createElement('div');
+            blankCell.style.height = options.showNav ? '36px' : '24px';
+            datesGrid.appendChild(blankCell);
+        }
+
+        // Fill in the days of month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateCell = document.createElement('button');
+            dateCell.type = 'button';
+            dateCell.textContent = day;
+            dateCell.style.border = 'none';
+            dateCell.style.background = 'transparent';
+            dateCell.style.cursor = 'pointer';
+            dateCell.style.padding = '2px';
+            dateCell.style.borderRadius = '6px';
+            dateCell.style.fontSize = options.showNav ? '14px' : '12px';
+            dateCell.style.position = 'relative';
+            dateCell.style.userSelect = 'none';
+
+            const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            // Highlight today's date
+            const nowStr = formatISODate(new Date());
+            if (dateStr === nowStr) {
+                dateCell.style.backgroundColor = '#3b82f6'; // blue
+                dateCell.style.color = 'white';
+                dateCell.style.fontWeight = '700';
+            }
+
+            // Show tasks indicator if any for date
+            if (options.showTasks) {
+                const tasks = getTasksForDate(dateStr);
+                if (tasks.length > 0) {
+                    const dot = document.createElement('span');
+                    dot.style.position = 'absolute';
+                    dot.style.width = options.showNav ? '7px' : '5px';
+                    dot.style.height = options.showNav ? '7px' : '5px';
+                    dot.style.borderRadius = '50%';
+                    dot.style.backgroundColor = '#22c55e'; // green
+                    dot.style.bottom = '6px';
+                    dot.style.left = '50%';
+                    dot.style.transform = 'translateX(-50%)';
+                    dot.title = tasks.map(t => t.title).join(', ');
+                    dateCell.appendChild(dot);
+                }
+            }
+
+            // Date click callback
+            if (options.onDateClick) {
+                dateCell.addEventListener('click', () => {
+                    options.onDateClick(dateStr);
+                });
+            }
+
+            datesGrid.appendChild(dateCell);
+        }
+    }
+
+    renderCalendarBody();
+}
+
+
+// --- Initialize calendar in full Calendar page ---
+function initFullCalendar(container) {
+    // On date click show alert (or can show tasks/details)
+    createCalendar(container, {
+        showNav: true,
+        showTasks: true,
+        onDateClick: (dateStr) => {
+            const tasks = getTasksForDate(dateStr);
+            if (tasks.length === 0) {
+                alert(`No tasks on ${dateStr}`);
+            } else {
+                alert(`Tasks on ${dateStr}:\n- ` + tasks.map(t => t.title).join('\n- '));
+            }
+        }
+    });
 }
 
 // Simple weekly score graph
