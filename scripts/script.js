@@ -297,56 +297,748 @@ function renderDashboard() {
     contentArea.appendChild(clone);
 }
 
+// Render Class Page
 function renderClassPage() {
     clearContentArea();
 
-    const div = document.createElement("div");
-    div.innerHTML = "<h2>Class Page</h2><p>This is where class info will go.</p>";
-    contentArea.appendChild(div);
+    const template = document.getElementById('page-class-template');
+    const clone = template.content.cloneNode(true);
+    const container = clone.querySelector('.subjects-container');
+
+    const subjects = [
+        { name: "Mathematics", icon: "📐", color: "#fce7f3" },
+        { name: "Science", icon: "🔬", color: "#dbeafe" },
+        { name: "English", icon: "📚", color: "#fee2e2" },
+        { name: "History", icon: "🏰", color: "#e0f2fe" },
+        { name: "Geography", icon: "🗺️", color: "#dcfce7" },
+        { name: "Computer Science", icon: "💻", color: "#ede9fe" },
+        { name: "Art", icon: "🎨", color: "#fef9c3" },
+    ];
+
+    subjects.forEach(subject => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.backgroundColor = subject.color;
+        btn.style.border = 'none';
+        btn.style.borderRadius = '20px';
+        btn.style.height = '90px';
+        btn.style.fontFamily = 'Georgia, serif';
+        btn.style.fontSize = '22px';
+        btn.style.fontWeight = '600';
+        btn.style.color = '#111827';
+        btn.style.padding = '18px';
+        btn.style.textAlign = 'left';
+        btn.style.cursor = 'pointer';
+        btn.style.userSelect = 'none';
+        btn.innerHTML = `${subject.icon}  ${subject.name}`;
+        btn.addEventListener('click', () => showSubjectDetail(subject.name));
+        container.appendChild(btn);
+    });
+
+    contentArea.appendChild(clone);
+}
+
+// Show Subject Detail Page
+function showSubjectDetail(subjectName) {
+    clearContentArea();
+
+    const template = document.getElementById('page-subject-detail-template');
+    const clone = template.content.cloneNode(true);
+
+    const sectionTitle = clone.querySelector('#subject-detail-title');
+    sectionTitle.textContent = subjectName + " Details";
+
+    const tabsContainer = clone.querySelector('.tabs');
+
+    // Sections like Modules, Pointers, Assignments
+    const sectionData = [
+        {
+            title: "Modules",
+            className: "modules",
+            items: [
+                { title: "Module 1: Introduction", content: "Mathematics is the study of numbers, shapes, and patterns." },
+                { title: "Module 2: Advanced Topics", content: "Covers calculus and problem-solving techniques." },
+                { title: "Module 3: Practice", content: "Hands-on exercises and practice problems." }
+            ],
+            colorStart: "#6366f1",
+            colorEnd: "#38bdf8"
+        },
+        {
+            title: "Pointers to Review",
+            className: "pointers",
+            items: [
+                { title: "Key Formula", content: "List of formulas you should memorize." },
+                { title: "Important Concepts", content: "Concepts you must understand." },
+                { title: "Sample Questions", content: "Example questions for practice." }
+            ],
+            colorStart: "#f43f5e",
+            colorEnd: "#f87171"
+        },
+        {
+            title: "Assignments",
+            className: "assignments",
+            items: [
+                { title: "Assignment 1", content: "Solve exercises on page 34-35." },
+                { title: "Assignment 2", content: "Group activity about measurements." },
+                { title: "Assignment 3", content: "Create a math puzzle." }
+            ],
+            colorStart: "#22c55e",
+            colorEnd: "#a3e635"
+        }
+    ];
+
+    sectionData.forEach(section => {
+        const sectionDiv = document.createElement('div');
+        sectionDiv.classList.add(section.className);
+
+        section.items.forEach(item => {
+            const sectionFrame = document.createElement('div');
+            sectionFrame.classList.add('section-frame');
+            sectionFrame.style.background = `linear-gradient(90deg, ${section.colorStart} 0%, ${section.colorEnd} 100%)`;
+            sectionFrame.style.borderRadius = '18px';
+            sectionFrame.style.padding = '14px 16px';
+            sectionFrame.style.marginBottom = '12px';
+            sectionFrame.style.color = 'white';
+
+            const itemLabel = document.createElement('p');
+            itemLabel.innerHTML = `&#8226; <b>${item.title}:</b> ${item.content}`;
+            itemLabel.style.margin = '0 0 8px 0';
+            itemLabel.style.userSelect = 'text'; // allow user to select text for AI
+            sectionFrame.appendChild(itemLabel);
+
+            // For Modules, add Ask AI button to explain or edit
+            if (section.className === 'modules') {
+                const askAiBtn = document.createElement('button');
+                askAiBtn.textContent = 'Ask AI';
+                askAiBtn.style.backgroundColor = '#fff59d';
+                askAiBtn.style.color = '#444';
+                askAiBtn.style.borderRadius = '6px';
+                askAiBtn.style.padding = '4px 8px';
+                askAiBtn.style.fontSize = '12px';
+                askAiBtn.style.fontWeight = '600';
+                askAiBtn.style.border = 'none';
+                askAiBtn.style.cursor = 'pointer';
+                askAiBtn.style.float = 'right';
+                askAiBtn.style.userSelect = 'none';
+                askAiBtn.style.display = 'none';
+
+                // Show button when text selected on paragraph
+                itemLabel.addEventListener('mouseup', () => {
+                    setTimeout(() => {
+                        if (window.getSelection && window.getSelection().toString().length > 0) {
+                            askAiBtn.style.display = 'inline-block';
+                        } else {
+                            askAiBtn.style.display = 'none';
+                        }
+                    }, 10); // Slight delay for selection event
+                });
+
+                askAiBtn.addEventListener('click', async () => {
+                    const selectedText = window.getSelection().toString();
+                    if (!selectedText) return;
+                    const choice = prompt(`Choose action for:\n"${selectedText}"\nType: Explain or Edit`, 'Explain');
+                    if (!choice) return;
+                    try {
+                        askAiBtn.disabled = true;
+                        askAiBtn.textContent = 'Thinking...';
+                        const response = await getAIResponse(`${choice} the following text:\n\n${selectedText}`);
+                        alert(`AI ${choice} result:\n\n${response}`);
+                    } catch (e) {
+                        alert("Error contacting AI service.");
+                    } finally {
+                        askAiBtn.disabled = false;
+                        askAiBtn.textContent = 'Ask AI';
+                    }
+                });
+
+                sectionFrame.appendChild(askAiBtn);
+            }
+
+            // Add private comment textarea (notes)
+            const notesTextarea = document.createElement('textarea');
+            notesTextarea.placeholder = 'Private comment...';
+            notesTextarea.style.width = '100%';
+            notesTextarea.style.borderRadius = '8px';
+            notesTextarea.style.border = '1.5px solid #d1d5db';
+            notesTextarea.style.padding = '10px';
+            notesTextarea.style.fontSize = '13px';
+            notesTextarea.style.resize = 'vertical';
+            const noteKey = `${section.title}::${item.title}`;
+
+            notesTextarea.value = SAVED_NOTES[noteKey] || '';
+
+            notesTextarea.addEventListener('input', () => {
+                SAVED_NOTES[noteKey] = notesTextarea.value;
+                setLocalData(STORAGE_KEY_NOTES, SAVED_NOTES);
+            });
+
+            sectionFrame.appendChild(notesTextarea);
+
+            // For Assignments, provide Upload and View buttons with functionality
+            if (section.className === 'assignments') {
+                const assignKey = `${subjectName}::${item.title}`;
+
+                const uploadBtn = document.createElement('button');
+                uploadBtn.textContent = 'Upload File';
+                uploadBtn.style.backgroundColor = 'white';
+                uploadBtn.style.color = '#3b82f6';
+                uploadBtn.style.border = '1.5px solid #3b82f6';
+                uploadBtn.style.borderRadius = '8px';
+                uploadBtn.style.padding = '4px 10px';
+                uploadBtn.style.fontWeight = '600';
+                uploadBtn.style.margin = '8px 0 4px 0';
+                uploadBtn.style.cursor = 'pointer';
+                uploadBtn.title = 'Upload your assignment file';
+
+                const viewBtn = document.createElement('button');
+                viewBtn.textContent = 'View Your Work';
+                viewBtn.style.backgroundColor = 'white';
+                viewBtn.style.color = '#10b981';
+                viewBtn.style.border = '1.5px solid #10b981';
+                viewBtn.style.borderRadius = '8px';
+                viewBtn.style.padding = '4px 10px';
+                viewBtn.style.fontWeight = '600';
+                viewBtn.style.margin = '4px 0 8px 0';
+                viewBtn.style.cursor = 'pointer';
+                viewBtn.title = 'View your submitted assignment file';
+
+                uploadBtn.addEventListener('click', () => {
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.accept = '*/*';
+                    fileInput.onchange = () => {
+                        const file = fileInput.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            // Note: In actual app, you would upload file to server here.
+                            // For demo, store file path placeholder string, as actual file access is limited in browsers.
+                            SUBMITTED_ASSIGNMENTS[assignKey] = file.name;
+                            setLocalData(STORAGE_KEY_ASSIGNMENTS, SUBMITTED_ASSIGNMENTS);
+                            uploadBtn.textContent = 'Uploaded ✔️';
+                            uploadBtn.disabled = true;
+                            viewBtn.disabled = false;
+                            alert(`Uploaded file: ${file.name}`);
+                        };
+                        reader.readAsDataURL(file); // Just to trigger load event
+                    };
+                    fileInput.click();
+                });
+
+                viewBtn.addEventListener('click', () => {
+                    if (SUBMITTED_ASSIGNMENTS[assignKey]) {
+                        alert(`Viewing submitted file: ${SUBMITTED_ASSIGNMENTS[assignKey]}`);
+                    } else {
+                        alert('No file uploaded yet.');
+                    }
+                });
+
+                if (SUBMITTED_ASSIGNMENTS[assignKey]) {
+                    uploadBtn.textContent = 'Uploaded ✔️';
+                    uploadBtn.disabled = true;
+                    viewBtn.disabled = false;
+                } else {
+                    viewBtn.disabled = true;
+                }
+
+                sectionFrame.appendChild(uploadBtn);
+                sectionFrame.appendChild(viewBtn);
+            }
+
+            sectionDiv.appendChild(sectionFrame);
+        });
+
+        tabsContainer.appendChild(sectionDiv);
+    });
+
+    // Back button functionality
+    clone.querySelector('#subject-back-btn').addEventListener('click', () => displayPage('Class'));
+
+    contentArea.appendChild(clone);
 }
 
 function renderCalendarPage() {
     clearContentArea();
 
-    const div = document.createElement("div");
-    div.innerHTML = `
-        <h2>Calendar</h2>
-        <p>This is the calendar view. Tasks and events will be listed here.</p>
-    `;
-    contentArea.appendChild(div);
+    const template = document.getElementById('page-calendar-template');
+    const clone = template.content.cloneNode(true);
+
+    const todoList = clone.getElementById ? clone.getElementById('todo-list') : clone.querySelector('#todo-list');
+    const incomingList = clone.getElementById ? clone.getElementById('incoming-activities') : clone.querySelector('#incoming-activities');
+    const todoAddBtn = clone.getElementById ? clone.getElementById('todo-add-btn') : clone.querySelector('#todo-add-btn');
+
+    // Initialize To-do tasks list from SHARED_TASKS
+    function refreshTodoList() {
+        todoList.innerHTML = '';
+        SHARED_TASKS.forEach((task, idx) => {
+            const li = document.createElement('li');
+            li.textContent = `${task.completed ? '✓ ' : '✗ '}${task.title} – Due: ${formatDateISO(task.due_date)}`;
+            li.style.color = task.completed ? 'green' : 'black';
+            li.tabIndex = 0;
+            li.style.cursor = 'pointer';
+            li.addEventListener('click', () => {
+                // Toggle completion status
+                SHARED_TASKS[idx].completed = !SHARED_TASKS[idx].completed;
+                saveAllToLocalStorage();
+                refreshTodoList();
+            });
+            todoList.appendChild(li);
+        });
+    }
+
+    refreshTodoList();
+
+    // Add new To-do task
+    todoAddBtn.addEventListener('click', () => {
+        const title = prompt('Enter new To-do task title:');
+        if (!title) return;
+        const due_date = prompt('Enter due date (YYYY-MM-DD):');
+        if (due_date && !isValidDate(due_date)) {
+            alert('Invalid date format. Please use YYYY-MM-DD.');
+            return;
+        }
+        SHARED_TASKS.push({ title, due_date: due_date || '', description: '', completed: false });
+        saveAllToLocalStorage();
+        refreshTodoList();
+    });
+
+    // Populate incoming activities - static as example
+    incomingList.innerHTML = '';
+    ['Essay Due - June 20', 'History Exam - June 22'].forEach(text => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        incomingList.appendChild(li);
+    });
+
+    contentArea.appendChild(clone);
 }
+
+// Helper to validate yyyy-MM-dd
+function isValidDate(dateStr) {
+    const date = new Date(dateStr);
+    return !isNaN(date.getTime()) && dateStr.match(/^\d{4}-\d{2}-\d{2}$/);
+}
+
 
 function renderProgressPage() {
     clearContentArea();
 
-    const div = document.createElement("div");
-    div.innerHTML = `
-        <h2>Progress</h2>
-        <p>This is the progress tracking page. Activity logs and scores will appear here.</p>
-    `;
-    contentArea.appendChild(div);
+    const template = document.getElementById('page-progress-template');
+    const clone = template.content.cloneNode(true);
+
+    const progressData = {
+        "This Week": [
+            ["Math Homework", "Graded: 90/100", "green"],
+            ["Science Quiz", "Ungraded", "gray"],
+            ["English Essay", "Graded: 88/100", "green"],
+            ["History Quiz", "Graded: 82/100", "green"],
+            ["Biology Lab", "Ungraded", "gray"],
+            ["PE Fitness Test", "Graded: 92/100", "green"],
+            ["Computer Assignment", "Graded: 85/100", "green"]
+        ],
+        "Last Week": [
+            ["Math Project", "Graded: 87/100", "green"],
+            ["Science Lab", "Ungraded", "gray"],
+            ["English Reading", "Graded: 80/100", "green"],
+            ["History Report", "Graded: 78/100", "green"],
+            ["Art Sketch", "Ungraded", "gray"],
+            ["Geography Quiz", "Graded: 84/100", "green"],
+            ["Music Composition", "Graded: 90/100", "green"]
+        ],
+        "Last Month": [
+            ["Math Exam", "Graded: 75/100", "green"],
+            ["Science Fair", "Graded: 93/100", "green"],
+            ["English Portfolio", "Ungraded", "gray"],
+            ["History Debate", "Graded: 85/100", "green"],
+            ["Computer Lab", "Graded: 80/100", "green"],
+            ["Art Exhibit", "Ungraded", "gray"],
+            ["Geography Map", "Graded: 86/100", "green"]
+        ]
+    };
+
+    const dropdown = clone.querySelector('#progress-filter');
+    const activityList = clone.querySelector('#progress-activity-list');
+    const canvas = clone.querySelector('#progress-chart');
+    const ctx = canvas.getContext('2d');
+
+    // Populate filter dropdown
+    Object.keys(progressData).forEach(key => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = key;
+        dropdown.appendChild(opt);
+    });
+
+    function drawGraph(filterKey) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const data = progressData[filterKey];
+        const subjects = data.map(d => d[0]);
+        const scores = data.map(d => d[1].startsWith('Graded') ? parseInt(d[1].match(/Graded: (\d+)/)[1]) : 0);
+
+        // Basic line graph with points
+        const padding = 40;
+        const w = canvas.width;
+        const h = canvas.height;
+        const maxScore = 100;
+
+        // Axes
+        ctx.strokeStyle = '#60a5fa';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, h - padding);
+        ctx.lineTo(w - padding, h - padding);
+        ctx.stroke();
+
+        // Grid lines
+        ctx.strokeStyle = '#d1d5db';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4,4]);
+        for (let i = 1; i <= 5; i++) {
+            const y = padding + i * ( (h - 2*padding) / 5 );
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(w - padding, y);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        // Plot line
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 2;
+        ctx.fillStyle = 'rgba(147,197,253,0.3)';
+        ctx.beginPath();
+        subjects.forEach((subj, i) => {
+            let x = padding + i * ( (w - 2 * padding) / (subjects.length - 1) );
+            let y = h - padding - (scores[i] / maxScore) * (h - 2 * padding);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Fill below line
+        ctx.lineTo(w - padding, h - padding);
+        ctx.lineTo(padding, h - padding);
+        ctx.closePath();
+        ctx.fill();
+
+        // Points and labels
+        ctx.fillStyle = '#2563eb';
+        ctx.font = '12px segoue ui';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        subjects.forEach((subj, i) => {
+            let x = padding + i * ( (w - 2 * padding) / (subjects.length - 1) );
+            let y = h - padding - (scores[i] / maxScore) * (h - 2 * padding);
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillText(subj, x, h - padding + 4);
+        });
+    }
+
+    function updateActivityList(filterKey) {
+        activityList.innerHTML = '';
+        progressData[filterKey].forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item[0]} - ${item[1]}`;
+            li.style.color = item[2];
+            activityList.appendChild(li);
+        });
+    }
+
+    dropdown.addEventListener('change', () => {
+        const val = dropdown.value;
+        updateActivityList(val);
+        drawGraph(val);
+    });
+
+    // Initialize with first option
+    if (dropdown.options.length > 0) {
+        dropdown.selectedIndex = 0;
+        updateActivityList(dropdown.value);
+        drawGraph(dropdown.value);
+    }
+
+    contentArea.appendChild(clone);
 }
+
 
 function renderGroupInitialPage() {
     clearContentArea();
 
-    const div = document.createElement("div");
-    div.innerHTML = `
-        <h2>Group Collaboration</h2>
-        <p>This is where group workspaces, shared files, and chat will appear.</p>
-    `;
-    contentArea.appendChild(div);
+    const template = document.getElementById('page-group-initial-template');
+    const clone = template.content.cloneNode(true);
+
+    const groupList = clone.querySelector('#group-list');
+    const newGroupInput = clone.querySelector('#new-group-name');
+    const createGroupBtn = clone.querySelector('#create-group-btn');
+
+    // Load groups from GROUPS_DATA (simulate)
+    function reloadGroupList() {
+        groupList.innerHTML = '';
+        GROUPS_DATA.forEach(group => {
+            const li = document.createElement('li');
+            li.tabIndex = 0;
+            li.textContent = group.group_name;
+            li.dataset.groupId = group.group_id || generateId();
+            // Click opens group detail (simulate)
+            li.addEventListener('click', () => {
+                renderGroupDetailsPage(li.dataset.groupId, li.textContent);
+            });
+            groupList.appendChild(li);
+        });
+    }
+
+    reloadGroupList();
+
+    createGroupBtn.addEventListener('click', () => {
+        const name = newGroupInput.value.trim();
+        if (!name) {
+            alert("Please enter a group name.");
+            return;
+        }
+        // Simple check: no duplicate
+        if (GROUPS_DATA.some(g => g.group_name.toLowerCase() === name.toLowerCase())) {
+            alert("Group name already exists.");
+            return;
+        }
+        // Add group
+        const newGroup = { group_name: name, group_id: generateId() };
+        GROUPS_DATA.push(newGroup);
+        setLocalData(STORAGE_KEY_GROUPS, GROUPS_DATA);
+        newGroupInput.value = '';
+        reloadGroupList();
+        alert(`Group "${name}" created.`);
+    });
+
+    contentArea.appendChild(clone);
+}
+
+// Render Group Details Page
+function renderGroupDetailsPage(groupId, groupName) {
+    clearContentArea();
+
+    const template = document.getElementById('page-group-details-template');
+    const clone = template.content.cloneNode(true);
+
+    const detailsName = clone.getElementById ? clone.getElementById('group-details-name') : clone.querySelector('#group-details-name');
+    detailsName.textContent = groupName;
+
+    const memberList = clone.getElementById ? clone.getElementById('group-member-list') : clone.querySelector('#group-member-list');
+    const inviteInput = clone.getElementById ? clone.getElementById('invite-member-id') : clone.querySelector('#invite-member-id');
+    const inviteBtn = clone.getElementById ? clone.getElementById('invite-member-btn') : clone.querySelector('#invite-member-btn');
+    const leaveBtn = clone.getElementById ? clone.getElementById('leave-group-btn') : clone.querySelector('#leave-group-btn');
+
+    const fileList = clone.getElementById ? clone.getElementById('group-file-list') : clone.querySelector('#group-file-list');
+    const uploadInput = clone.getElementById ? clone.getElementById('upload-file-input') : clone.querySelector('#upload-file-input');
+    const uploadBtn = clone.getElementById ? clone.getElementById('upload-file-btn') : clone.querySelector('#upload-file-btn');
+    const deleteFileBtn = clone.getElementById ? clone.getElementById('delete-file-btn') : clone.querySelector('#delete-file-btn');
+
+    const chatList = clone.getElementById ? clone.getElementById('group-chat-list') : clone.querySelector('#group-chat-list');
+    const chatInput = clone.getElementById ? clone.getElementById('group-chat-input') : clone.querySelector('#group-chat-input');
+    const sendChatBtn = clone.getElementById ? clone.getElementById('send-chat-btn') : clone.querySelector('#send-chat-btn');
+
+    const deleteGroupBtn = clone.getElementById ? clone.getElementById('delete-group-btn') : clone.querySelector('#delete-group-btn');
+
+    // Load Members
+    let members = GROUP_MEMBERS[groupId] || [];
+    function reloadMembers() {
+        memberList.innerHTML = '';
+        members.forEach(m => {
+            const li = document.createElement('li');
+            li.textContent = m;
+            memberList.appendChild(li);
+        });
+    }
+    reloadMembers();
+
+    inviteBtn.addEventListener('click', () => {
+        const newMember = inviteInput.value.trim();
+        if (!newMember) {
+            alert("Enter student ID to invite.");
+            return;
+        }
+        // Check format
+        if (!validateStudentNoFormat(newMember)) {
+            alert("Invalid student ID format. Use e.g. 22-12345.");
+            return;
+        }
+        if (members.includes(newMember)) {
+            alert("Member already in group.");
+            return;
+        }
+        members.push(newMember);
+        GROUP_MEMBERS[groupId] = members;
+        setLocalData(STORAGE_KEY_GROUPS_MEMBERS, GROUP_MEMBERS);
+        inviteInput.value = '';
+        reloadMembers();
+        alert(`Member ${newMember} invited.`);
+    });
+
+    leaveBtn.addEventListener('click', () => {
+        if (confirm("Are you sure you want to leave this group?")) {
+            members = members.filter(m => m !== currentStudentNo);
+            GROUP_MEMBERS[groupId] = members;
+            setLocalData(STORAGE_KEY_GROUPS_MEMBERS, GROUP_MEMBERS);
+            alert("You left the group.");
+            displayPage('Group');
+        }
+    });
+
+    // Load Files
+    let files = GROUP_FILES[groupId] || [];
+    let selectedFileIndex = -1;
+    function reloadFiles() {
+        fileList.innerHTML = '';
+        files.forEach((file, idx) => {
+            const li = document.createElement('li');
+            li.textContent = file.name;
+            li.tabIndex = 0;
+            li.style.cursor = 'pointer';
+            li.dataset.index = idx;
+            li.addEventListener('click', () => {
+                const prevSelected = fileList.querySelector('.selected');
+                if (prevSelected) prevSelected.classList.remove('selected');
+                li.classList.add('selected');
+                selectedFileIndex = idx;
+                deleteFileBtn.disabled = false;
+            });
+            fileList.appendChild(li);
+        });
+        deleteFileBtn.disabled = true;
+        selectedFileIndex = -1;
+    }
+    reloadFiles();
+
+    // Upload File
+    uploadBtn.addEventListener('click', () => {
+        uploadInput.click();
+    });
+
+    uploadInput.addEventListener('change', () => {
+        const file = uploadInput.files[0];
+        if (!file) return;
+        files.push({ name: file.name });
+        GROUP_FILES[groupId] = files;
+        setLocalData(STORAGE_KEY_GROUPS_FILES, GROUP_FILES);
+        reloadFiles();
+        alert(`File "${file.name}" uploaded.`);
+        uploadInput.value = '';
+    });
+
+    // Delete File
+    deleteFileBtn.addEventListener('click', () => {
+        if (selectedFileIndex === -1) return;
+        if (!confirm(`Delete file "${files[selectedFileIndex].name}"? This cannot be undone.`)) return;
+        files.splice(selectedFileIndex, 1);
+        GROUP_FILES[groupId] = files;
+        setLocalData(STORAGE_KEY_GROUPS_FILES, GROUP_FILES);
+        reloadFiles();
+    });
+
+    // Group Chat
+    let chats = GROUP_CHATS[groupId] || [];
+    function reloadChats() {
+        chatList.innerHTML = '';
+        chats.forEach(chat => {
+            const li = document.createElement('li');
+            li.textContent = chat;
+            chatList.appendChild(li);
+        });
+        chatList.scrollTop = chatList.scrollHeight;
+    }
+    reloadChats();
+
+    sendChatBtn.addEventListener('click', () => {
+        const msg = chatInput.value.trim();
+        if (!msg) return;
+        chats.push(`${currentStudentNo || 'User'}: ${msg}`);
+        GROUP_CHATS[groupId] = chats;
+        setLocalData(STORAGE_KEY_GROUPS_CHATS, GROUP_CHATS);
+        chatInput.value = '';
+        reloadChats();
+    });
+
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatBtn.click();
+        }
+    });
+
+    // Delete Group
+    deleteGroupBtn.addEventListener('click', () => {
+        if (!confirm(`Delete group "${groupName}" and all its data? This cannot be undone.`)) return;
+        GROUPS_DATA = GROUPS_DATA.filter(g => g.group_id !== groupId);
+        delete GROUP_MEMBERS[groupId];
+        delete GROUP_FILES[groupId];
+        delete GROUP_CHATS[groupId];
+        setLocalData(STORAGE_KEY_GROUPS, GROUPS_DATA);
+        setLocalData(STORAGE_KEY_GROUPS_MEMBERS, GROUP_MEMBERS);
+        setLocalData(STORAGE_KEY_GROUPS_FILES, GROUP_FILES);
+        setLocalData(STORAGE_KEY_GROUPS_CHATS, GROUP_CHATS);
+        alert(`Group "${groupName}" deleted.`);
+        displayPage('Group');
+    });
+
+    clone.querySelector('#back-to-groups').addEventListener('click', () => displayPage('Group'));
+
+    contentArea.appendChild(clone);
 }
 
 function renderSettingsPage() {
     clearContentArea();
 
-    const div = document.createElement("div");
-    div.innerHTML = `
-        <h2>Settings</h2>
-        <p>This page will contain user preferences, dark mode toggle, account info, etc.</p>
-    `;
-    contentArea.appendChild(div);
+    const template = document.getElementById('page-setting-template');
+    const clone = template.content.cloneNode(true);
+
+    const displayNameInput = clone.querySelector('#display-name');
+    const oldPassInput = clone.querySelector('#old-password');
+    const newPassInput = clone.querySelector('#new-password');
+    const toggles = clone.querySelectorAll('.toggle-pass-btn');
+    const notifCheckbox = clone.querySelector('#email-notif');
+    const saveBtn = clone.querySelector('#save-settings-btn');
+    const updatePassBtn = clone.querySelector('#update-password-btn');
+
+    // Load settings from localStorage or default
+    const settings = JSON.parse(localStorage.getItem('studysync_settings') || '{}');
+    displayNameInput.value = settings.displayName || '';
+    notifCheckbox.checked = settings.emailNotifications || false;
+
+    toggles.forEach(toggleBtn => {
+        toggleBtn.addEventListener('click', () => {
+            const input = toggleBtn.previousElementSibling;
+            if (input.type === 'password') {
+                input.type = 'text';
+            } else {
+                input.type = 'password';
+            }
+            input.focus();
+        });
+    });
+
+    updatePassBtn.addEventListener('click', () => {
+        const oldPass = oldPassInput.value.trim();
+        const newPass = newPassInput.value.trim();
+        if (!oldPass || !newPass) {
+            alert('Please fill both old and new password fields.');
+            return;
+        }
+        // For demo, just confirm password change
+        alert('Password updated successfully.');
+        oldPassInput.value = '';
+        newPassInput.value = '';
+    });
+
+    saveBtn.addEventListener('click', () => {
+        settings.displayName = displayNameInput.value.trim();
+        settings.emailNotifications = notifCheckbox.checked;
+        localStorage.setItem('studysync_settings', JSON.stringify(settings));
+        alert('Settings saved.');
+    });
+
+    contentArea.appendChild(clone);
 }
 
 
