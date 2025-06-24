@@ -770,6 +770,11 @@ function renderProgressPage() {
     const canvas = clone.querySelector('#progress-chart');
     const ctx = canvas.getContext('2d');
 
+    if (!ctx) {
+        console.error('Failed to get 2D context');
+    return; // Stop further execution since drawing isn't possible
+    }
+
     // Populate filter dropdown
     Object.keys(progressData).forEach(key => {
         const opt = document.createElement('option');
@@ -778,74 +783,7 @@ function renderProgressPage() {
         dropdown.appendChild(opt);
     });
 
-    function drawGraph(filterKey) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const data = progressData[filterKey];
-        const subjects = data.map(d => d[0]);
-        const scores = data.map(d => d[1].startsWith('Graded') ? parseInt(d[1].match(/Graded: (\d+)/)[1]) : 0);
-
-        // Basic line graph with points
-        const padding = 40;
-        const w = canvas.width;
-        const h = canvas.height;
-        const maxScore = 100;
-
-        // Axes
-        ctx.strokeStyle = '#60a5fa';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(padding, padding);
-        ctx.lineTo(padding, h - padding);
-        ctx.lineTo(w - padding, h - padding);
-        ctx.stroke();
-
-        // Grid lines
-        ctx.strokeStyle = '#d1d5db';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4,4]);
-        for (let i = 1; i <= 5; i++) {
-            const y = padding + i * ( (h - 2*padding) / 5 );
-            ctx.beginPath();
-            ctx.moveTo(padding, y);
-            ctx.lineTo(w - padding, y);
-            ctx.stroke();
-        }
-        ctx.setLineDash([]);
-
-        // Plot line
-        ctx.strokeStyle = '#2563eb';
-        ctx.lineWidth = 2;
-        ctx.fillStyle = 'rgba(147,197,253,0.3)';
-        ctx.beginPath();
-        subjects.forEach((subj, i) => {
-            let x = padding + i * ( (w - 2 * padding) / (subjects.length - 1) );
-            let y = h - padding - (scores[i] / maxScore) * (h - 2 * padding);
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-
-        // Fill below line
-        ctx.lineTo(w - padding, h - padding);
-        ctx.lineTo(padding, h - padding);
-        ctx.closePath();
-        ctx.fill();
-
-        // Points and labels
-        ctx.fillStyle = '#2563eb';
-        ctx.font = '12px segoue ui';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        subjects.forEach((subj, i) => {
-            let x = padding + i * ( (w - 2 * padding) / (subjects.length - 1) );
-            let y = h - padding - (scores[i] / maxScore) * (h - 2 * padding);
-            ctx.beginPath();
-            ctx.arc(x, y, 4, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.fillText(subj, x, h - padding + 4);
-        });
-    }
-
+    // Update activity list based on filter
     function updateActivityList(filterKey) {
         activityList.innerHTML = '';
         progressData[filterKey].forEach(item => {
@@ -856,17 +794,106 @@ function renderProgressPage() {
         });
     }
 
+    // Draw the labeled line graph with scores on y-axis and subjects on x-axis
+    function drawGraph(filterKey) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const data = progressData[filterKey];
+        const subjects = data.map(d => d[0]);
+        const scores = data.map(d => d[1].startsWith('Graded') ? parseInt(d[1].match(/Graded: (\d+)/)[1]) : 0);
+
+        const padding = 40;
+        const w = canvas.width;
+        const h = canvas.height;
+        const maxScore = 100;
+
+        // Draw axes with labels
+        ctx.strokeStyle = '#60a5fa';
+        ctx.lineWidth = 2;
+
+        // Y-axis line
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, h - padding);
+        ctx.stroke();
+
+        // X-axis line
+        ctx.beginPath();
+        ctx.moveTo(padding, h - padding);
+        ctx.lineTo(w - padding, h - padding);
+        ctx.stroke();
+
+        // Draw grid lines & Y-axis labels (0, 20, 40, 60, 80, 100)
+        ctx.strokeStyle = '#d1d5db';
+        ctx.fillStyle = '#374151'; // dark gray for text
+        ctx.font = '12px Segoe UI, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+
+        const stepCount = 5; // number of intervals
+        for (let i = 0; i <= stepCount; i++) {
+            const y = padding + i * ((h - 2 * padding) / stepCount);
+            const scoreLabel = maxScore - i * (maxScore / stepCount);
+            // Grid line
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(w - padding, y);
+            ctx.stroke();
+            // Label left of Y axis
+            ctx.fillText(scoreLabel.toString(), padding - 6, y);
+        }
+
+        ctx.setLineDash([]);
+
+        // Plot line graph
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 2;
+        ctx.fillStyle = 'rgba(147,197,253,0.3)';
+        ctx.beginPath();
+        subjects.forEach((_, i) => {
+            const x = padding + i * ((w - 2 * padding) / (subjects.length - 1));
+            const y = h - padding - (scores[i] / maxScore) * (h - 2 * padding);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Fill area under the line
+        ctx.lineTo(w - padding, h - padding);
+        ctx.lineTo(padding, h - padding);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw points and labels
+        ctx.fillStyle = '#2563eb';
+        ctx.font = '12px Segoe UI, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        subjects.forEach((subj, i) => {
+            const x = padding + i * ((w - 2 * padding) / (subjects.length - 1));
+            const y = h - padding - (scores[i] / maxScore) * (h - 2 * padding);
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            // X-axis subject labels
+            ctx.fillText(subj, x, h - padding + 8);
+        });
+    }
+
+    // Dropdown change event handler
     dropdown.addEventListener('change', () => {
         const val = dropdown.value;
         updateActivityList(val);
         drawGraph(val);
     });
 
-    // Initialize with first option
+    // Initialize with the first option
     if (dropdown.options.length > 0) {
         dropdown.selectedIndex = 0;
-        updateActivityList(dropdown.value);
-        drawGraph(dropdown.value);
+        const initialVal = dropdown.value;
+        updateActivityList(initialVal);
+        drawGraph(initialVal);
     }
 
     contentArea.appendChild(clone);
